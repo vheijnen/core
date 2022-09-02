@@ -172,7 +172,3 @@ async def test_failure_scenarios(hass, client):
     # Test that device id from non webostv domain raises exception
     with pytest.raises(InvalidDeviceAutomationConfig):
         await device_trigger.async_validate_trigger_config(hass, config)
-
-    # Test no exception if device is not loaded
-    await hass.config_entries.async_unload(entry.entry_id)
-    assert await device_trigger.async_validate_trigger_config(hass, config) == config
