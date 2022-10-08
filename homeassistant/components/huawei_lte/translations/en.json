@@ -1,7 +1,7 @@
 {
     "config": {
         "abort": {
-            "not_huawei_lte": "Not a Huawei LTE device",
+            "not_huawei_lte": "Not a Huawei/SoyeaLink LTE device",
             "reauth_successful": "Re-authentication was successful"
         },
         "error": {
@@ -31,7 +31,7 @@
                     "username": "Username"
                 },
                 "description": "Enter device access details.",
-                "title": "Configure Huawei LTE"
+                "title": "Configure Huawei/SoyeaLink LTE"
             }
         }
     },
