@@ -117,6 +117,7 @@ EVENT_AUTOMATION_TRIGGERED = "automation_triggered"
 ATTR_LAST_TRIGGERED = "last_triggered"
 ATTR_SOURCE = "source"
 ATTR_VARIABLES = "variables"
+SERVICE_RELOAD_AUTOMATION = "reload_automation"
 SERVICE_TRIGGER = "trigger"
 
 _LOGGER = logging.getLogger(__name__)
@@ -243,7 +244,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     # To register the automation blueprints
     async_get_blueprints(hass)
 
-    if not await _async_process_config(hass, config, component):
+    if not await _async_process_config(hass, config, component, None):
         await async_get_blueprints(hass).async_populate()
 
     async def trigger_service_handler(
@@ -272,15 +273,29 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         "async_turn_off",
     )
 
-    async def reload_service_handler(service_call: ServiceCall) -> None:
+    async def reload_all_service_handler(service_call: ServiceCall) -> None:
         """Remove all automations and load new ones from config."""
         if (conf := await component.async_prepare_reload()) is None:
             return
         async_get_blueprints(hass).async_reset_cache()
-        await _async_process_config(hass, conf, component)
+        await _async_process_config(hass, conf, component, None)
         hass.bus.async_fire(EVENT_AUTOMATION_RELOADED, context=service_call.context)
 
-    reload_helper = ReloadServiceHelper(reload_service_handler)
+    async def reload_single_service_handler(service_call: ServiceCall) -> None:
+        """Remove all automations and load new ones from config."""
+        automation_id = service_call.data[CONF_ID]
+        automation = component.get_entity(automation_id)
+        if automation:
+            await automation.async_remove()
+
+        if (conf := await component.async_prepare_reload(skip_reset=True)) is None:
+            return
+        async_get_blueprints(hass).async_reset_cache()
+        await _async_process_config(hass, conf, component, automation_id)
+
+        hass.bus.async_fire(EVENT_AUTOMATION_RELOADED, context=service_call.context)
+
+    reload_helper = ReloadServiceHelper(reload_all_service_handler)
 
     async_register_admin_service(
         hass,
@@ -288,6 +303,14 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         SERVICE_RELOAD,
         reload_helper.execute_service,
         schema=vol.Schema({}),
+    )
+
+    async_register_admin_service(
+        hass,
+        DOMAIN,
+        SERVICE_RELOAD_AUTOMATION,
+        reload_single_service_handler,
+        schema=vol.Schema({CONF_ID: str}),
     )
 
     websocket_api.async_register_command(hass, websocket_config)
@@ -664,6 +687,7 @@ async def _async_process_config(
     hass: HomeAssistant,
     config: dict[str, Any],
     component: EntityComponent[AutomationEntity],
+    wanted_automation_id: str | None,
 ) -> bool:
     """Process config and add automations.
 
@@ -701,6 +725,12 @@ async def _async_process_config(
                 raw_config = cast(AutomationConfig, config_block).raw_config
 
             automation_id: str | None = config_block.get(CONF_ID)
+            if (
+                wanted_automation_id is not None
+                and automation_id != wanted_automation_id
+            ):
+                continue
+
             name: str = config_block.get(CONF_ALIAS) or f"{config_key} {list_no}"
 
             initial_state: bool | None = config_block.get(CONF_INITIAL_STATE)

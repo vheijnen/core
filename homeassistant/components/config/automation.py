@@ -1,24 +1,28 @@
 """Provide configuration end points for Automations."""
 import uuid
 
+from homeassistant.components.automation import SERVICE_RELOAD_AUTOMATION
 from homeassistant.components.automation.config import (
     DOMAIN,
     PLATFORM_SCHEMA,
     async_validate_config_item,
 )
 from homeassistant.config import AUTOMATION_CONFIG_PATH
-from homeassistant.const import CONF_ID, SERVICE_RELOAD
+from homeassistant.const import CONF_ID
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv, entity_registry
 
 from . import ACTION_DELETE, EditIdBasedConfigView
 
 
-async def async_setup(hass):
+async def async_setup(hass: HomeAssistant):
     """Set up the Automation config API."""
 
     async def hook(action, config_key):
         """post_write_hook for Config View that reloads automations."""
-        await hass.services.async_call(DOMAIN, SERVICE_RELOAD)
+        await hass.services.async_call(
+            DOMAIN, SERVICE_RELOAD_AUTOMATION, {CONF_ID: config_key}
+        )
 
         if action != ACTION_DELETE:
             return
