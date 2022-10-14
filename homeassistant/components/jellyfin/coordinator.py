@@ -32,6 +32,7 @@ class JellyfinDataUpdateCoordinator(DataUpdateCoordinator[JellyfinDataT]):
         hass: HomeAssistant,
         api_client: JellyfinClient,
         system_info: dict[str, Any],
+        user_id: str,
     ) -> None:
         """Initialize the coordinator."""
         super().__init__(
@@ -44,6 +45,7 @@ class JellyfinDataUpdateCoordinator(DataUpdateCoordinator[JellyfinDataT]):
         self.server_id: str = system_info["Id"]
         self.server_name: str = system_info["Name"]
         self.server_version: str | None = system_info.get("Version")
+        self.user_id: str = user_id
 
     async def _async_update_data(self) -> JellyfinDataT:
         """Get the latest data from Jellyfin."""
