@@ -25,7 +25,7 @@
                     "port": "Poort",
                     "username": "Gebruikersnaam"
                 },
-                "title": "Verzendclient instellen"
+                "title": "Transmission client instellen"
             }
         }
     },
@@ -34,10 +34,10 @@
             "init": {
                 "data": {
                     "limit": "Limiet",
-                    "order": "Bestel",
-                    "scan_interval": "Update frequentie"
+                    "order": "Volgorde",
+                    "scan_interval": "Bijwerkfrequentie"
                 },
-                "title": "Configureer de opties voor Transmission"
+                "title": "Bewerk de instellingen van Transmission"
             }
         }
     }
